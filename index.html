@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muti Seblak - Integrated IIS & Order System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Bungee&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        muti: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            700: '#be123c',
+                            800: '#9f1239',
+                            dark: '#0b0f19',
+                            card: '#151d30'
+                        },
+                        fire: {
+                            500: '#ff5722',
+                            600: '#f4511e'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        display: ['Bungee', 'cursive']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0b0f19;
+            color: #f8fafc;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #e11d48;
+        }
+        .glass-panel {
+            background: rgba(21, 29, 48, 0.75);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .fire-glow {
+            box-shadow: 0 0 25px rgba(225, 29, 72, 0.35);
+        }
+        .logo-text {
+            font-family: 'Bungee', cursive;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-muti-600 selection:text-white">
+
+    <!-- MAIN NAVBAR -->
+    <header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- LOGO BRANDING -->
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="navigatePortal('customer')">
+                    <!-- Stylish Custom Logo -->
+                    <div class="relative w-12 h-12 bg-gradient-to-tr from-muti-700 via-fire-600 to-amber-500 rounded-2xl flex items-center justify-center shadow-lg fire-glow border border-white/20 transform hover:rotate-3 transition">
+                        <i class="fa-solid fa-bowl-food text-white text-2xl"></i>
+                        <span class="absolute -top-1 -right-1 bg-amber-400 text-slate-950 rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-black border-2 border-slate-950">
+                            🔥
+                        </span>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h1 class="logo-text text-xl tracking-wider text-white">MUTI<span class="text-muti-500">SEBLAK</span></h1>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                Asli Pedas!
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 font-medium">Sistem Pemesanan Integrated</p>
+                    </div>
+                </div>
+
+                <!-- PORTAL SWITCHER & ACCOUNT CONTROLS -->
+                <div class="flex items-center space-x-3">
+                    <!-- Customer Quick Cart Button -->
+                    <button id="cartNavBtn" onclick="openCartModal()" class="relative p-2.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl transition border border-slate-700/80">
+                        <i class="fa-solid fa-basket-shopping text-lg text-amber-400"></i>
+                        <span id="cartBadge" class="absolute -top-1.5 -right-1.5 bg-muti-600 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center hidden">0</span>
+                    </button>
+
+                    <!-- Active User Info & Login Switch -->
+                    <div class="flex items-center space-x-2 bg-slate-900/90 p-1.5 pr-3 rounded-2xl border border-slate-800">
+                        <div id="userAvatar" class="w-8 h-8 rounded-xl bg-muti-600 text-white font-extrabold flex items-center justify-center text-xs shadow">
+                            G
+                        </div>
+                        <div class="text-left hidden sm:block">
+                            <div id="userName" class="text-xs font-bold text-white leading-tight">Pelanggan Guest</div>
+                            <div id="userRoleBadge" class="text-[10px] text-amber-400 font-semibold uppercase">Pelanggan</div>
+                        </div>
+                        <button onclick="openAuthModal()" class="ml-2 bg-muti-600/20 hover:bg-muti-600 text-muti-400 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition border border-muti-500/30">
+                            <i class="fa-solid fa-right-to-bracket mr-1"></i> Login / Register
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PORTAL TABS SWITCHER (Customer Mode vs Admin Staff Portal) -->
+            <div class="flex border-t border-slate-800/80 overflow-x-auto py-2 no-scrollbar gap-2">
+                <button onclick="navigatePortal('customer')" id="pTab-customer" class="portal-tab px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 transition bg-muti-600 text-white shadow-md">
+                    <i class="fa-solid fa-store"></i>
+                    <span>Portal Pelanggan (Menu Seblak)</span>
+                </button>
+                <button onclick="navigatePortal('admin')" id="pTab-admin" class="portal-tab px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 transition text-slate-400 hover:text-white hover:bg-slate-800/80">
+                    <i class="fa-solid fa-user-shield text-amber-400"></i>
+                    <span>Portal Staff & Admin Muti Seblak</span>
+                    <span id="adminPendingBadge" class="hidden px-1.5 py-0.5 text-[10px] bg-amber-500 text-slate-950 rounded-full font-black">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- ============================================================== -->
+        <!-- VIEW 1: CUSTOMER PORTAL (CUSTOMER -> MENU -> ORDER)            -->
+        <!-- ============================================================== -->
+        <section id="portal-customer" class="space-y-6">
+            <!-- Promo Banner -->
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-muti-800 to-fire-600 p-6 sm:p-8 border border-muti-500/30 shadow-2xl">
+                <div class="relative z-10 max-w-xl">
+                    <span class="inline-block px-3 py-1 bg-amber-400/20 text-amber-300 rounded-full text-xs font-extrabold uppercase tracking-wider mb-2 border border-amber-400/30">
+                        🌶️ Kencur Asli & Rempah Pilihan
+                    </span>
+                    <h2 class="text-2xl sm:text-4xl logo-text text-white leading-tight">SELAMAT DATANG DI MUTI SEBLAK!</h2>
+                    <p class="mt-2 text-xs sm:text-sm text-slate-200 leading-relaxed">
+                        Pesan seblak kuah pedas gurih favoritmu secara langsung! Pilih level pedas dari Lvl 0 sampai Lvl 5 dan kreasikan topping melimpah.
+                    </p>
+                </div>
+                <div class="absolute -right-6 -bottom-10 opacity-20 sm:opacity-40 pointer-events-none">
+                    <i class="fa-solid fa-pepper-hot text-9xl text-amber-400 transform -rotate-45"></i>
+                </div>
+            </div>
+
+            <!-- Order Mode Switcher -->
+            <div class="glass-panel p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-motorcycle"></i>
+                    </div>
+                    <div>
+                        <div class="text-[11px] text-slate-400">Tipe Pesanan Anda:</div>
+                        <div class="text-sm font-extrabold text-white" id="orderTypeLabel">Dine-In (Makan di Resto)</div>
+                    </div>
+                </div>
+                <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-800 w-full sm:w-auto">
+                    <button onclick="setOrderType('dine_in')" id="btnOptDineIn" class="flex-1 sm:flex-none px-5 py-2 rounded-lg text-xs font-bold transition bg-muti-600 text-white shadow">
+                        <i class="fa-solid fa-utensils mr-1"></i> Dine-In
+                    </button>
+                    <button onclick="setOrderType('delivery')" id="btnOptDelivery" class="flex-1 sm:flex-none px-5 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white">
+                        <i class="fa-solid fa-truck-ramp-box mr-1"></i> Delivery
+                    </button>
+                </div>
+            </div>
+
+            <!-- Seblak Menu Grid -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-fire text-muti-500"></i> Menu Spesial Muti Seblak
+                    </h3>
+                    <span class="text-xs text-slate-400">Klik 'Kustomisasi' untuk memilih Level Pedas & Topping</span>
+                </div>
+
+                <div id="menuGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Dynamic Menu Cards -->
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ============================================================== -->
+        <!-- VIEW 2: STAFF & ADMIN PORTAL (KITCHEN, DELIVERY, ANALYTICS)  -->
+        <!-- ============================================================== -->
+        <section id="portal-admin" class="hidden space-y-6">
+            <!-- Admin Section Header -->
+            <div class="glass-panel p-6 rounded-2xl border border-slate-700/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <span class="text-xs font-bold text-amber-400 uppercase tracking-widest">Sistem Terintegrasi Muti Seblak</span>
+                    <h2 class="text-2xl font-extrabold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-user-gear text-muti-500"></i> Dashboard Staff & Dapur
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Mengelola Kasir Pembayaran, Kitchen Display System (KDS), dan Kurir Pengiriman</p>
+                </div>
+                
+                <!-- Internal Admin Sub-Tabs -->
+                <div class="flex bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 overflow-x-auto">
+                    <button onclick="switchAdminTab('cashier')" id="aTab-cashier" class="admin-subtab px-4 py-2 rounded-lg text-xs font-bold transition bg-muti-600 text-white shadow">
+                        <i class="fa-solid fa-cash-register mr-1"></i> 1. Kasir / Bayar
+                    </button>
+                    <button onclick="switchAdminTab('kitchen')" id="aTab-kitchen" class="admin-subtab px-4 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white">
+                        <i class="fa-solid fa-fire-burner mr-1 text-muti-500"></i> 2. Dapur (KDS)
+                    </button>
+                    <button onclick="switchAdminTab('delivery')" id="aTab-delivery" class="admin-subtab px-4 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white">
+                        <i class="fa-solid fa-truck-fast mr-1 text-blue-400"></i> 3. Delivery & Servis
+                    </button>
+                    <button onclick="switchAdminTab('reports')" id="aTab-reports" class="admin-subtab px-4 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white">
+                        <i class="fa-solid fa-chart-pie mr-1 text-emerald-400"></i> 4. Laporan IIS
+                    </button>
+                </div>
+            </div>
+
+            <!-- ADMIN SUB-TAB 1: CASHIER VERIFICATION -->
+            <div id="admin-cashier" class="admin-view space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-receipt text-amber-400"></i> Menunggu Verifikasi Pembayaran
+                    </h3>
+                    <span class="text-xs text-slate-400">Gunakan ini untuk konfirmasi pesanan Tunai/Transfer</span>
+                </div>
+
+                <div id="cashierList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Dynamic Orders for Cashier -->
+                </div>
+            </div>
+
+            <!-- ADMIN SUB-TAB 2: KITCHEN DISPLAY SYSTEM (KDS) -->
+            <div id="admin-kitchen" class="admin-view hidden space-y-4">
+                <div class="bg-slate-900/90 p-4 rounded-xl border border-muti-600/30 flex justify-between items-center">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></div>
+                        <h3 class="text-base font-bold text-white">Layar Koki Dapur (KDS Live)</h3>
+                    </div>
+                    <span class="text-xs text-slate-400">Pesanan Lunas Otomatis Muncul Di Sini</span>
+                </div>
+
+                <div id="kitchenList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Dynamic KDS Orders -->
+                </div>
+            </div>
+
+            <!-- ADMIN SUB-TAB 3: DELIVERY & TABLE TRACKER -->
+            <div id="admin-delivery" class="admin-view hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-truck-ramp-box text-blue-400"></i> Antrean Pengantaran & Penyajian
+                    </h3>
+                </div>
+
+                <div id="deliveryList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Dynamic Delivery Orders -->
+                </div>
+            </div>
+
+            <!-- ADMIN SUB-TAB 4: REPORTS & IIS DATABASE -->
+            <div id="admin-reports" class="admin-view hidden space-y-6">
+                <!-- Summary Stats -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-panel p-5 rounded-2xl">
+                        <div class="text-xs font-bold text-slate-400">TOTAL OMSET TERVERIFIKASI</div>
+                        <div class="text-2xl font-black text-emerald-400 mt-1" id="statOmset">Rp 0</div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl">
+                        <div class="text-xs font-bold text-slate-400">TOTAL ORDER MASUK</div>
+                        <div class="text-2xl font-black text-amber-400 mt-1" id="statTotalOrder">0</div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl">
+                        <div class="text-xs font-bold text-slate-400">ORDER SELESAI</div>
+                        <div class="text-2xl font-black text-blue-400 mt-1" id="statCompleted">0</div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl">
+                        <div class="text-xs font-bold text-slate-400">SEBLAK TERJUAL (PORSI)</div>
+                        <div class="text-2xl font-black text-muti-500 mt-1" id="statPortions">0</div>
+                    </div>
+                </div>
+
+                <!-- Live Audit Table -->
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+                    <h4 class="text-base font-bold text-white mb-4">Database Live Transaksi Muti Seblak</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-900 text-slate-400 uppercase font-bold">
+                                <tr>
+                                    <th class="p-3">ID Order</th>
+                                    <th class="p-3">Pelanggan</th>
+                                    <th class="p-3">Rincian Menu & Level</th>
+                                    <th class="p-3">Total</th>
+                                    <th class="p-3">Bayar</th>
+                                    <th class="p-3">Dapur</th>
+                                    <th class="p-3">Status Akhir</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportsTableBody" class="divide-y divide-slate-800/80">
+                                <!-- Dynamic Table Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ============================================================== -->
+    <!-- MODAL 1: SEBLAK CUSTOMIZATION MODAL                           -->
+    <!-- ============================================================== -->
+    <div id="customModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel bg-slate-900 border-slate-700/80 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-800/40">
+                <div>
+                    <h3 id="modalMenuTitle" class="text-base font-bold text-white">Custom Seblak</h3>
+                    <p id="modalMenuBasePrice" class="text-xs text-amber-400 font-semibold">Rp 0</p>
+                </div>
+                <button onclick="closeCustomModal()" class="text-slate-400 hover:text-white p-2">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-5 flex-1">
+                <!-- Level Pedas Options -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-200 uppercase tracking-wider mb-2">
+                        🌶️ Pilih Level Kepedasan (Bumbu Kencur):
+                    </label>
+                    <div class="grid grid-cols-3 gap-2" id="spicyOptionsContainer">
+                        <!-- Dynamic Spicy Buttons -->
+                    </div>
+                </div>
+
+                <!-- Extra Toppings -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-200 uppercase tracking-wider mb-2">
+                        🍢 Tambah Topping Muti Seblak:
+                    </label>
+                    <div class="grid grid-cols-2 gap-2" id="toppingOptionsContainer">
+                        <!-- Dynamic Toppings Checkboxes -->
+                    </div>
+                </div>
+
+                <!-- Special Request -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Catatan Pesanan:</label>
+                    <input type="text" id="customNotes" placeholder="Contoh: Kuah dibanyakin, kerupuk agak lembek..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-muti-500">
+                </div>
+
+                <!-- Quantity Picker -->
+                <div class="flex items-center justify-between pt-2">
+                    <span class="text-xs font-bold text-slate-300">Jumlah Porsi:</span>
+                    <div class="flex items-center space-x-3 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+                        <button onclick="changeModalQty(-1)" class="text-muti-500 hover:text-muti-400 font-bold text-base px-1">-</button>
+                        <span id="modalQtyDisplay" class="text-sm font-bold text-white w-6 text-center">1</span>
+                        <button onclick="changeModalQty(1)" class="text-muti-500 hover:text-muti-400 font-bold text-base px-1">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-5 border-t border-slate-800 bg-slate-900/80 flex items-center justify-between">
+                <div>
+                    <div class="text-[10px] text-slate-400">Total Harga Porsi:</div>
+                    <div id="modalSubtotalDisplay" class="text-lg font-extrabold text-amber-400">Rp 0</div>
+                </div>
+                <button onclick="saveToCart()" class="bg-muti-600 hover:bg-muti-500 text-white font-bold text-xs px-6 py-3 rounded-xl shadow-lg shadow-muti-600/30 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-cart-plus"></i>
+                    <span>Masukkan Keranjang</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ============================================================== -->
+    <!-- MODAL 2: CART & CHECKOUT MODAL                                -->
+    <!-- ============================================================== -->
+    <div id="cartModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel bg-slate-900 border-slate-700/80 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-5 border-b border-slate-800 flex justify-between items-center">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-basket-shopping text-amber-400"></i> Keranjang Muti Seblak
+                </h3>
+                <button onclick="closeCartModal()" class="text-slate-400 hover:text-white p-2">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-4 flex-1">
+                <!-- Location or Table Input -->
+                <div id="checkoutInfoBox" class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs text-slate-300">
+                    <!-- Dynamic Form Input -->
+                </div>
+
+                <!-- Cart Items List -->
+                <div id="cartList" class="space-y-3">
+                    <!-- Dynamic cart items -->
+                </div>
+            </div>
+
+            <!-- Payment Method Selection -->
+            <div class="p-5 border-t border-slate-800 bg-slate-900/90 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-2">Metode Pembayaran:</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setPaymentMethod('qris')" id="payOpt-qris" class="pay-option p-2.5 rounded-xl border border-muti-500 bg-muti-500/10 text-white text-xs font-bold flex flex-col items-center gap-1">
+                            <i class="fa-solid fa-qrcode text-base text-muti-400"></i>
+                            <span>QRIS Instant</span>
+                        </button>
+                        <button onclick="setPaymentMethod('cash')" id="payOpt-cash" class="pay-option p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 text-xs font-bold flex flex-col items-center gap-1">
+                            <i class="fa-solid fa-money-bill-wave text-base"></i>
+                            <span>Tunai di Kasir</span>
+                        </button>
+                        <button onclick="setPaymentMethod('bank')" id="payOpt-bank" class="pay-option p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 text-xs font-bold flex flex-col items-center gap-1">
+                            <i class="fa-solid fa-building-columns text-base"></i>
+                            <span>Transfer Bank</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Simulated QRIS Display -->
+                <div id="qrisDisplay" class="bg-white p-3 rounded-2xl flex items-center space-x-3 text-slate-900">
+                    <div class="w-16 h-16 bg-slate-900 text-white flex items-center justify-center rounded-xl font-bold text-xs p-1 text-center">
+                        [QRIS CODE]
+                    </div>
+                    <div class="text-[11px] leading-tight">
+                        <div class="font-extrabold text-muti-600">Scan QRIS Muti Seblak</div>
+                        <div class="text-slate-500 mt-0.5">Mendukung Gopay, OVO, ShopeePay, Dana, & BCA</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2">
+                    <div>
+                        <div class="text-[10px] text-slate-400">Total Pembayaran:</div>
+                        <div id="cartGrandTotal" class="text-xl font-extrabold text-amber-400">Rp 0</div>
+                    </div>
+                    <button onclick="submitOrder()" class="bg-gradient-to-r from-muti-600 to-fire-600 hover:from-muti-500 hover:to-fire-500 text-white font-extrabold text-xs px-6 py-3 rounded-xl shadow-lg transition">
+                        Kirim Pesanan <i class="fa-solid fa-paper-plane ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ============================================================== -->
+    <!-- MODAL 3: SEPARATE LOGIN & REGISTER MODAL                       -->
+    <!-- ============================================================== -->
+    <div id="authModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel bg-slate-900 border-slate-700/80 w-full max-w-md rounded-3xl p-6 shadow-2xl relative">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Distinct Login Type Header -->
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-muti-600/20 text-muti-500 mb-2">
+                    <i class="fa-solid fa-user-lock text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white">Akses Akun Muti Seblak</h3>
+                <p class="text-xs text-slate-400">Pilih tipe akun untuk masuk ke dalam sistem</p>
+            </div>
+
+            <!-- TAB SWITCHER: CUSTOMER LOGIN vs ADMIN/STAFF LOGIN -->
+            <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 mb-5">
+                <button onclick="switchAuthType('customer')" id="authMode-customer" class="flex-1 py-2 rounded-lg text-xs font-bold transition bg-muti-600 text-white shadow">
+                    Login Pelanggan
+                </button>
+                <button onclick="switchAuthType('admin')" id="authMode-admin" class="flex-1 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white">
+                    Login Admin & Staff
+                </button>
+            </div>
+
+            <!-- FORM 1: CUSTOMER LOGIN -->
+            <form id="formCustomerAuth" onsubmit="handleCustomerLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Email / No HP Pelanggan</label>
+                    <input type="text" id="custLoginEmail" required value="pelanggan@mutiseblak.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-muti-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+                    <input type="password" id="custLoginPass" required value="123456" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-muti-500">
+                </div>
+                <button type="submit" class="w-full bg-muti-600 hover:bg-muti-500 text-white font-bold py-3 rounded-xl text-xs shadow-lg transition">
+                    Masuk Sebagai Pelanggan
+                </button>
+            </form>
+
+            <!-- FORM 2: ADMIN & STAFF LOGIN -->
+            <form id="formAdminAuth" onsubmit="handleAdminLogin(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">ID Staff / Email Admin</label>
+                    <input type="text" id="adminLoginEmail" required value="admin@mutiseblak.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Password Staff</label>
+                    <input type="password" id="adminLoginPass" required value="admin123" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Role Penugasan:</label>
+                    <select id="adminLoginRole" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-amber-400 font-bold focus:outline-none">
+                        <option value="admin">Admin Utama / Kasir</option>
+                        <option value="kitchen">Koki Dapur (Kitchen Staff)</option>
+                        <option value="courier">Waitress & Kurir Delivery</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-amber-600 hover:bg-amber-500 text-slate-950 font-extrabold py-3 rounded-xl text-xs shadow-lg transition">
+                    Masuk Ke Portal Admin / Staff
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-950 border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+        <p>© 2026 Muti Seblak — Integrated Information System (IIS) Pedas Otentik.</p>
+    </footer>
+
+    <!-- JAVASCRIPT APP ENGINE -->
+    <script>
+        // ================= DATABASES SIMULATION =================
+        const MENU_SEBLAK = [
+            {
+                id: 'm1',
+                name: 'Seblak Kerupuk Original',
+                desc: 'Kerupuk mawar basah pilihan, kuah kencur pedas beraroma kencur segar.',
+                price: 12000,
+                badge: 'Favorit',
+                img: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=400&q=80'
+            },
+            {
+                id: 'm2',
+                name: 'Seblak Mie Ceker Pedas',
+                desc: 'Mie kuning kenyal, kerupuk, plus 2 pcs ceker ayam empuk bumbu meresap.',
+                price: 17000,
+                badge: 'Best Seller',
+                img: 'https://images.unsplash.com/photo-1555126634-323283e090fa?auto=format&fit=crop&w=400&q=80'
+            },
+            {
+                id: 'm3',
+                name: 'Seblak Komplit Muti Spesial',
+                desc: 'Isi Komplit: Kerupuk, mie, bakso sapi, sosis, & telur orak-arik.',
+                price: 22000,
+                badge: 'Komplit',
+                img: 'https://images.unsplash.com/photo-1612927601601-6638404737ce?auto=format&fit=crop&w=400&q=80'
+            },
+            {
+                id: 'm4',
+                name: 'Seblak Seafood Dumpling Cheese',
+                desc: 'Dumpling keju lumer, chikuwa, crabstick, kerupuk & kuah rempah pedas.',
+                price: 25000,
+                badge: 'Spesial',
+                img: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=400&q=80'
+            }
+        ];
+
+        const SPICY_LEVELS = [
+            { level: 0, name: 'Lvl 0 (Tanpa Cabai)', extra: 0 },
+            { level: 1, name: 'Lvl 1 (Sedang)', extra: 0 },
+            { level: 2, name: 'Lvl 2 (Pedas)', extra: 1000 },
+            { level: 3, name: 'Lvl 3 (Pedas Mantap)', extra: 2000 },
+            { level: 4, name: 'Lvl 4 (Meringis)', extra: 3000 },
+            { level: 5, name: 'Lvl 5 (Setan 🌶️)', extra: 4000 }
+        ];
+
+        const TOPPINGS = [
+            { id: 't1', name: 'Ceker Empuk (2pcs)', price: 4000 },
+            { id: 't2', name: 'Bakso Sapi (2pcs)', price: 4000 },
+            { id: 't3', name: 'Sosis Slices', price: 3000 },
+            { id: 't4', name: 'Telur Orak-Arik', price: 4000 },
+            { id: 't5', name: 'Dumpling Keju', price: 5000 }
+        ];
+
+        // GLOBAL STATE
+        let currentUser = {
+            name: 'Pelanggan Guest',
+            role: 'customer' // 'customer', 'admin', 'kitchen', 'courier'
+        };
+
+        let activePortal = 'customer'; // 'customer' or 'admin'
+        let cart = [];
+        let orderType = 'dine_in'; // 'dine_in' or 'delivery'
+        let paymentMethod = 'qris';
+        let ordersDatabase = [];
+
+        // Customization Modal Temp State
+        let selectedMenu = null;
+        let selectedSpicy = SPICY_LEVELS[1];
+        let selectedToppings = [];
+        let modalQty = 1;
+
+        // INITIALIZATION
+        window.onload = function() {
+            renderMenuGrid();
+            seedDemoOrders();
+            renderAllViews();
+        };
+
+        function seedDemoOrders() {
+            ordersDatabase = [
+                {
+                    id: 'MUTI-801',
+                    customer: 'Budi Santoso',
+                    type: 'dine_in',
+                    location: 'Meja 03',
+                    items: [
+                        { name: 'Seblak Komplit Muti Spesial', qty: 1, spicy: 'Lvl 3 (Pedas Mantap)', toppings: ['Dumpling Keju'], price: 27000 }
+                    ],
+                    total: 27000,
+                    paymentMethod: 'qris',
+                    paymentStatus: 'paid',
+                    kitchenStatus: 'ready',
+                    deliveryStatus: 'delivered',
+                    time: '12:30'
+                },
+                {
+                    id: 'MUTI-802',
+                    customer: 'Siti Rahma',
+                    type: 'delivery',
+                    location: 'Jl. Pemuda No. 12, Bandung',
+                    items: [
+                        { name: 'Seblak Mie Ceker Pedas', qty: 2, spicy: 'Lvl 5 (Setan 🌶️)', toppings: ['Bakso Sapi (2pcs)'], price: 42000 }
+                    ],
+                    total: 42000,
+                    paymentMethod: 'cash',
+                    paymentStatus: 'unpaid',
+                    kitchenStatus: 'pending',
+                    deliveryStatus: 'pending',
+                    time: '12:45'
+                }
+            ];
+        }
+
+        // RENDER MENU CARDS
+        function renderMenuGrid() {
+            const grid = document.getElementById('menuGrid');
+            grid.innerHTML = MENU_SEBLAK.map(m => `
+                <div class="glass-panel rounded-2xl overflow-hidden border border-slate-800 hover:border-muti-500/50 transition duration-300 flex flex-col justify-between">
+                    <div class="relative h-44 overflow-hidden">
+                        <img src="${m.img}" alt="${m.name}" class="w-full h-full object-cover hover:scale-105 transition duration-500" onerror="this.src='https://placehold.co/400x300/e11d48/ffffff?text=Muti+Seblak'">
+                        <span class="absolute top-3 left-3 bg-muti-600/90 text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase">
+                            ${m.badge}
+                        </span>
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col justify-between">
+                        <div>
+                            <h4 class="text-sm font-bold text-white mb-1">${m.name}</h4>
+                            <p class="text-xs text-slate-400 leading-relaxed mb-4">${m.desc}</p>
+                        </div>
+                        <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+                            <div>
+                                <span class="text-[10px] text-slate-400 block">Harga Dasar</span>
+                                <span class="text-sm font-extrabold text-amber-400">Rp ${m.price.toLocaleString('id-ID')}</span>
+                            </div>
+                            <button onclick="openCustomModal('${m.id}')" class="bg-muti-600 hover:bg-muti-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-sliders"></i> Kustomisasi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // NAVIGATION PORTALS
+        function navigatePortal(portalName) {
+            activePortal = portalName;
+            document.getElementById('portal-customer').classList.add('hidden');
+            document.getElementById('portal-admin').classList.add('hidden');
+
+            document.querySelectorAll('.portal-tab').forEach(b => {
+                b.classList.remove('bg-muti-600', 'text-white', 'shadow-md');
+                b.classList.add('text-slate-400');
+            });
+
+            document.getElementById(`portal-${portalName}`).classList.remove('hidden');
+            const activeTab = document.getElementById(`pTab-${portalName}`);
+            activeTab.classList.add('bg-muti-600', 'text-white', 'shadow-md');
+            activeTab.classList.remove('text-slate-400');
+
+            renderAllViews();
+        }
+
+        function switchAdminTab(subTab) {
+            document.querySelectorAll('.admin-view').forEach(v => v.classList.add('hidden'));
+            document.querySelectorAll('.admin-subtab').forEach(b => {
+                b.classList.remove('bg-muti-600', 'text-white', 'shadow');
+                b.classList.add('text-slate-400');
+            });
+
+            document.getElementById(`admin-${subTab}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`aTab-${subTab}`);
+            activeBtn.classList.add('bg-muti-600', 'text-white', 'shadow');
+            activeBtn.classList.remove('text-slate-400');
+        }
+
+        // SEBLAK CUSTOMIZATION MODAL
+        function openCustomModal(menuId) {
+            selectedMenu = MENU_SEBLAK.find(m => m.id === menuId);
+            selectedSpicy = SPICY_LEVELS[1];
+            selectedToppings = [];
+            modalQty = 1;
+            document.getElementById('customNotes').value = '';
+
+            document.getElementById('modalMenuTitle').innerText = selectedMenu.name;
+            document.getElementById('modalMenuBasePrice').innerText = `Rp ${selectedMenu.price.toLocaleString('id-ID')}`;
+
+            // Render Spicy Levels
+            const spicyBox = document.getElementById('spicyOptionsContainer');
+            spicyBox.innerHTML = SPICY_LEVELS.map((sp, idx) => `
+                <button onclick="pickSpicyLevel(${idx})" id="spicyOpt-${idx}" class="p-2 rounded-xl text-xs font-bold border ${idx === 1 ? 'border-muti-500 bg-muti-500/20 text-white' : 'border-slate-800 bg-slate-950 text-slate-400'} transition flex flex-col items-center">
+                    <span>${sp.name}</span>
+                    <span class="text-[10px] text-amber-400 font-normal">${sp.extra > 0 ? '+Rp ' + sp.extra : 'Gratis'}</span>
+                </button>
+            `).join('');
+
+            // Render Toppings
+            const toppingBox = document.getElementById('toppingOptionsContainer');
+            toppingBox.innerHTML = TOPPINGS.map(top => `
+                <label class="flex items-center justify-between p-2 rounded-xl border border-slate-800 bg-slate-950/80 cursor-pointer hover:border-slate-700 transition">
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" onchange="toggleToppingItem('${top.id}')" class="rounded border-slate-800 text-muti-500 focus:ring-0">
+                        <span class="text-xs font-medium text-slate-300">${top.name}</span>
+                    </div>
+                    <span class="text-[10px] text-amber-400 font-semibold">+${top.price/1000}k</span>
+                </label>
+            `).join('');
+
+            calcModalTotal();
+            document.getElementById('customModal').classList.remove('hidden');
+        }
+
+        function closeCustomModal() {
+            document.getElementById('customModal').classList.add('hidden');
+        }
+
+        function pickSpicyLevel(idx) {
+            selectedSpicy = SPICY_LEVELS[idx];
+            SPICY_LEVELS.forEach((_, i) => {
+                const btn = document.getElementById(`spicyOpt-${i}`);
+                if (i === idx) {
+                    btn.className = 'p-2 rounded-xl text-xs font-bold border border-muti-500 bg-muti-500/20 text-white transition flex flex-col items-center';
+                } else {
+                    btn.className = 'p-2 rounded-xl text-xs font-bold border border-slate-800 bg-slate-950 text-slate-400 transition flex flex-col items-center';
+                }
+            });
+            calcModalTotal();
+        }
+
+        function toggleToppingItem(id) {
+            const top = TOPPINGS.find(t => t.id === id);
+            const idx = selectedToppings.findIndex(t => t.id === id);
+            if (idx > -1) selectedToppings.splice(idx, 1);
+            else selectedToppings.push(top);
+            calcModalTotal();
+        }
+
+        function changeModalQty(val) {
+            modalQty = Math.max(1, modalQty + val);
+            document.getElementById('modalQtyDisplay').innerText = modalQty;
+            calcModalTotal();
+        }
+
+        function calcModalTotal() {
+            if (!selectedMenu) return;
+            let toppingSum = selectedToppings.reduce((sum, t) => sum + t.price, 0);
+            let singlePrice = selectedMenu.price + selectedSpicy.extra + toppingSum;
+            let total = singlePrice * modalQty;
+            document.getElementById('modalSubtotalDisplay').innerText = `Rp ${total.toLocaleString('id-ID')}`;
+        }
+
+        function saveToCart() {
+            let toppingSum = selectedToppings.reduce((sum, t) => sum + t.price, 0);
+            let singlePrice = selectedMenu.price + selectedSpicy.extra + toppingSum;
+            let notes = document.getElementById('customNotes').value;
+
+            cart.push({
+                name: selectedMenu.name,
+                spicy: selectedSpicy.name,
+                toppings: selectedToppings.map(t => t.name),
+                price: singlePrice * modalQty,
+                qty: modalQty,
+                notes: notes
+            });
+
+            updateCartBadge();
+            closeCustomModal();
+        }
+
+        function updateCartBadge() {
+            const badge = document.getElementById('cartBadge');
+            const total = cart.reduce((s, i) => s + i.qty, 0);
+            if (total > 0) {
+                badge.innerText = total;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // CART & CHECKOUT
+        function setOrderType(type) {
+            orderType = type;
+            const btnD = document.getElementById('btnOptDineIn');
+            const btnV = document.getElementById('btnOptDelivery');
+            const label = document.getElementById('orderTypeLabel');
+
+            if (type === 'dine_in') {
+                btnD.className = "flex-1 sm:flex-none px-5 py-2 rounded-lg text-xs font-bold transition bg-muti-600 text-white shadow";
+                btnV.className = "flex-1 sm:flex-none px-5 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white";
+                label.innerText = "Dine-In (Makan di Resto)";
+            } else {
+                btnV.className = "flex-1 sm:flex-none px-5 py-2 rounded-lg text-xs font-bold transition bg-muti-600 text-white shadow";
+                btnD.className = "flex-1 sm:flex-none px-5 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white";
+                label.innerText = "Delivery (Pengantaran Alamat)";
+            }
+        }
+
+        function openCartModal() {
+            const container = document.getElementById('cartList');
+            const infoBox = document.getElementById('checkoutInfoBox');
+
+            if (orderType === 'dine_in') {
+                infoBox.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-white"><i class="fa-solid fa-chair text-muti-500 mr-1"></i> Nomor Meja Dine-In:</span>
+                        <input type="text" id="checkoutTableNo" value="Meja 01" class="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-amber-400 font-bold focus:outline-none w-28 text-center">
+                    </div>
+                `;
+            } else {
+                infoBox.innerHTML = `
+                    <div class="space-y-1.5">
+                        <span class="font-bold text-white"><i class="fa-solid fa-location-dot text-amber-400 mr-1"></i> Alamat Pengiriman:</span>
+                        <textarea id="checkoutAddress" rows="2" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none">Jl. Asia Afrika No. 88, Bandung</textarea>
+                    </div>
+                `;
+            }
+
+            if (cart.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-500 text-xs py-6">Keranjang masih kosong.</p>`;
+                document.getElementById('cartGrandTotal').innerText = `Rp 0`;
+            } else {
+                container.innerHTML = cart.map((item, idx) => `
+                    <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex justify-between items-center">
+                        <div>
+                            <h5 class="text-xs font-bold text-white">${item.qty}x ${item.name}</h5>
+                            <div class="text-[11px] text-muti-400 font-semibold">${item.spicy}</div>
+                            ${item.toppings.length ? `<div class="text-[10px] text-slate-400">+ ${item.toppings.join(', ')}</div>` : ''}
+                            <div class="text-xs font-extrabold text-amber-400 mt-1">Rp ${item.price.toLocaleString('id-ID')}</div>
+                        </div>
+                        <button onclick="removeCartItem(${idx})" class="text-slate-500 hover:text-muti-500 p-2 text-xs">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `).join('');
+
+                let grandTotal = cart.reduce((sum, item) => sum + item.price, 0);
+                document.getElementById('cartGrandTotal').innerText = `Rp ${grandTotal.toLocaleString('id-ID')}`;
+            }
+
+            document.getElementById('cartModal').classList.remove('hidden');
+        }
+
+        function closeCartModal() {
+            document.getElementById('cartModal').classList.add('hidden');
+        }
+
+        function removeCartItem(idx) {
+            cart.splice(idx, 1);
+            updateCartBadge();
+            openCartModal();
+        }
+
+        function setPaymentMethod(method) {
+            paymentMethod = method;
+            document.querySelectorAll('.pay-option').forEach(b => {
+                b.className = 'pay-option p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 text-xs font-bold flex flex-col items-center gap-1';
+            });
+            document.getElementById(`payOpt-${method}`).className = 'pay-option p-2.5 rounded-xl border border-muti-500 bg-muti-500/10 text-white text-xs font-bold flex flex-col items-center gap-1';
+
+            const qrisBox = document.getElementById('qrisDisplay');
+            if (method === 'qris') qrisBox.classList.remove('hidden');
+            else qrisBox.classList.add('hidden');
+        }
+
+        function submitOrder() {
+            if (cart.length === 0) {
+                alert('Keranjang belanja kosong!');
+                return;
+            }
+
+            let location = orderType === 'dine_in' ? (document.getElementById('checkoutTableNo')?.value || 'Meja 01') : (document.getElementById('checkoutAddress')?.value || 'Alamat');
+            let total = cart.reduce((sum, item) => sum + item.price, 0);
+
+            const newOrder = {
+                id: `MUTI-${Math.floor(100 + Math.random() * 900)}`,
+                customer: currentUser.name,
+                type: orderType,
+                location: location,
+                items: [...cart],
+                total: total,
+                paymentMethod: paymentMethod,
+                paymentStatus: paymentMethod === 'qris' ? 'paid' : 'unpaid',
+                kitchenStatus: paymentMethod === 'qris' ? 'cooking' : 'pending',
+                deliveryStatus: 'pending',
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+
+            ordersDatabase.unshift(newOrder);
+
+            cart = [];
+            updateCartBadge();
+            closeCartModal();
+
+            if (newOrder.paymentStatus === 'paid') {
+                alert(`Pesanan ${newOrder.id} Berhasil (QRIS LUNAS)! Otomatis Masuk Ke Layar Dapur.`);
+            } else {
+                alert(`Pesanan ${newOrder.id} Dibuat! Silakan Verifikasi Ke Kasir.`);
+            }
+
+            renderAllViews();
+        }
+
+        // RENDER ALL INTEGRATED VIEWS
+        function renderAllViews() {
+            renderCashierView();
+            renderKitchenView();
+            renderDeliveryView();
+            renderReportsView();
+        }
+
+        function renderCashierView() {
+            const list = document.getElementById('cashierList');
+            if (ordersDatabase.length === 0) {
+                list.innerHTML = `<p class="text-slate-500 text-xs col-span-2 text-center py-6">Belum ada transaksi.</p>`;
+                return;
+            }
+
+            list.innerHTML = ordersDatabase.map(o => `
+                <div class="bg-slate-900 rounded-2xl p-4 border ${o.paymentStatus === 'unpaid' ? 'border-amber-500/60' : 'border-slate-800'} space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-bold text-muti-400">${o.id}</span>
+                            <h5 class="text-sm font-bold text-white">${o.customer} (${o.location})</h5>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${o.paymentStatus === 'paid' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">
+                            ${o.paymentStatus === 'paid' ? 'LUNAS' : 'BELUM BAYAR'}
+                        </span>
+                    </div>
+
+                    <div class="space-y-1 text-xs text-slate-300">
+                        ${o.items.map(i => `<div>- ${i.qty}x ${i.name} (${i.spicy})</div>`).join('')}
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+                        <span class="text-sm font-extrabold text-amber-400">Rp ${o.total.toLocaleString('id-ID')}</span>
+                        ${o.paymentStatus === 'unpaid' ? `
+                            <button onclick="approvePayment('${o.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition">
+                                Konfirmasi Bayar
+                            </button>
+                        ` : `<span class="text-[10px] text-slate-400"><i class="fa-solid fa-check text-emerald-400"></i> Terverifikasi</span>`}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function approvePayment(id) {
+            const order = ordersDatabase.find(o => o.id === id);
+            if (order) {
+                order.paymentStatus = 'paid';
+                order.kitchenStatus = 'cooking';
+                renderAllViews();
+                alert(`Pembayaran ${id} Berhasil Dikonfirmasi Kasir! Pesanan Masuk Ke Dapur.`);
+            }
+        }
+
+        function renderKitchenView() {
+            const list = document.getElementById('kitchenList');
+            const cooking = ordersDatabase.filter(o => o.paymentStatus === 'paid' && o.kitchenStatus !== 'ready');
+
+            if (cooking.length === 0) {
+                list.innerHTML = `<p class="text-slate-500 text-xs col-span-3 text-center py-6">Tidak ada antrean dapur.</p>`;
+                return;
+            }
+
+            list.innerHTML = cooking.map(o => `
+                <div class="bg-slate-900 rounded-2xl p-5 border-2 border-muti-500 shadow-xl space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-black text-amber-400">${o.id}</span>
+                            <h4 class="text-base font-extrabold text-white">${o.location}</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-black bg-muti-600 text-white uppercase">KOKI PROSES</span>
+                    </div>
+
+                    <div class="space-y-2 py-2 border-t border-b border-slate-800">
+                        ${o.items.map(i => `
+                            <div class="bg-slate-950 p-2 rounded-xl">
+                                <div class="text-xs font-bold text-white">${i.qty}x ${i.name}</div>
+                                <div class="text-xs font-bold text-muti-400">🌶️ ${i.spicy}</div>
+                                ${i.toppings.length ? `<div class="text-[10px] text-amber-300">+ Topping: ${i.toppings.join(', ')}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <button onclick="finishCooking('${o.id}')" class="w-full bg-muti-600 hover:bg-muti-500 text-white font-bold text-xs py-2.5 rounded-xl transition">
+                        <i class="fa-solid fa-bell mr-1"></i> Selesai Dimasak
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function finishCooking(id) {
+            const order = ordersDatabase.find(o => o.id === id);
+            if (order) {
+                order.kitchenStatus = 'ready';
+                order.deliveryStatus = 'delivering';
+                renderAllViews();
+                alert(`Pesanan ${id} Selesai Dimasak! Diteruskan Ke Waitress / Kurir.`);
+            }
+        }
+
+        function renderDeliveryView() {
+            const list = document.getElementById('deliveryList');
+            const delivering = ordersDatabase.filter(o => o.kitchenStatus === 'ready' && o.deliveryStatus !== 'delivered');
+
+            if (delivering.length === 0) {
+                list.innerHTML = `<p class="text-slate-500 text-xs col-span-3 text-center py-6">Tidak ada pesanan siap antar.</p>`;
+                return;
+            }
+
+            list.innerHTML = delivering.map(o => `
+                <div class="bg-slate-900 rounded-2xl p-5 border border-blue-500/50 space-y-3">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-bold text-blue-400">${o.id}</span>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-300">Siap Antar</span>
+                    </div>
+
+                    <div>
+                        <div class="text-xs text-slate-400">Tujuan Penyajian:</div>
+                        <div class="text-sm font-extrabold text-white">${o.location}</div>
+                        <div class="text-xs text-slate-300 mt-1">Atas Nama: ${o.customer}</div>
+                    </div>
+
+                    <button onclick="finishDelivery('${o.id}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs py-2.5 rounded-xl transition">
+                        <i class="fa-solid fa-check-double mr-1"></i> Selesai Terkirim
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function finishDelivery(id) {
+            const order = ordersDatabase.find(o => o.id === id);
+            if (order) {
+                order.deliveryStatus = 'delivered';
+                renderAllViews();
+                alert(`Pesanan ${id} Berhasil Diterima Pelanggan! Transaksi Selesai.`);
+            }
+        }
+
+        function renderReportsView() {
+            const paid = ordersDatabase.filter(o => o.paymentStatus === 'paid');
+            const omset = paid.reduce((s, o) => s + o.total, 0);
+            const completed = ordersDatabase.filter(o => o.deliveryStatus === 'delivered');
+            let totalPortions = 0;
+            ordersDatabase.forEach(o => o.items.forEach(i => totalPortions += i.qty));
+
+            document.getElementById('statOmset').innerText = `Rp ${omset.toLocaleString('id-ID')}`;
+            document.getElementById('statTotalOrder').innerText = ordersDatabase.length;
+            document.getElementById('statCompleted').innerText = completed.length;
+            document.getElementById('statPortions').innerText = totalPortions;
+
+            const table = document.getElementById('reportsTableBody');
+            table.innerHTML = ordersDatabase.map(o => `
+                <tr class="hover:bg-slate-800/40">
+                    <td class="p-3 font-bold text-muti-400">${o.id}</td>
+                    <td class="p-3 font-medium text-white">${o.customer}</td>
+                    <td class="p-3">${o.items.map(i => `${i.name} (${i.spicy})`).join(', ')}</td>
+                    <td class="p-3 font-extrabold text-amber-400">Rp ${o.total.toLocaleString('id-ID')}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.paymentStatus === 'paid' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">${o.paymentStatus}</span></td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.kitchenStatus === 'ready' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-muti-500/20 text-muti-400'}">${o.kitchenStatus}</span></td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.deliveryStatus === 'delivered' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-800 text-slate-400'}">${o.deliveryStatus}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // AUTHENTICATION MODAL LOGIC
+        function openAuthModal() {
+            document.getElementById('authModal').classList.remove('hidden');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.add('hidden');
+        }
+
+        function switchAuthType(type) {
+            const formC = document.getElementById('formCustomerAuth');
+            const formA = document.getElementById('formAdminAuth');
+            const btnC = document.getElementById('authMode-customer');
+            const btnA = document.getElementById('authMode-admin');
+
+            if (type === 'customer') {
+                formC.classList.remove('hidden');
+                formA.classList.add('hidden');
+                btnC.className = "flex-1 py-2 rounded-lg text-xs font-bold transition bg-muti-600 text-white shadow";
+                btnA.className = "flex-1 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white";
+            } else {
+                formA.classList.remove('hidden');
+                formC.classList.add('hidden');
+                btnA.className = "flex-1 py-2 rounded-lg text-xs font-bold transition bg-amber-600 text-slate-950 font-extrabold shadow";
+                btnC.className = "flex-1 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white";
+            }
+        }
+
+        function handleCustomerLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('custLoginEmail').value;
+            currentUser = {
+                name: email.split('@')[0],
+                role: 'customer'
+            };
+            updateUserUI();
+            closeAuthModal();
+            navigatePortal('customer');
+        }
+
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const role = document.getElementById('adminLoginRole').value;
+            const email = document.getElementById('adminLoginEmail').value;
+
+            currentUser = {
+                name: email.split('@')[0],
+                role: role
+            };
+
+            updateUserUI();
+            closeAuthModal();
+            navigatePortal('admin');
+
+            if (role === 'kitchen') switchAdminTab('kitchen');
+            else if (role === 'courier') switchAdminTab('delivery');
+            else switchAdminTab('cashier');
+        }
+
+        function updateUserUI() {
+            document.getElementById('userName').innerText = currentUser.name;
+            document.getElementById('userRoleBadge').innerText = currentUser.role;
+            document.getElementById('userAvatar').innerText = currentUser.name[0].toUpperCase();
+        }
+    </script>
+</body>
+</html>
